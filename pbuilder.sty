@@ -1,0 +1,310 @@
+% https://www.overleaf.com/learn/latex/Writing_your_own_package
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{pbuilder}[2021/05/08 Problems Builder]
+
+\@ifpackageloaded{xcolor}{}{\usepackage{xcolor}}
+\@ifpackageloaded{etoolbox}{}{\usepackage{etoolbox}}
+\@ifpackageloaded{xifthen}{}{\usepackage{xifthen}}
+\@ifpackageloaded{enumitem}{}{\usepackage{enumitem}}
+
+\RequirePackage{xcolor}
+\RequirePackage{etoolbox}
+
+% an ITEM should consist of a problem, solution, hint, comment etc.
+\newcounter{itemctr} % item counter
+\newcounter{bitemctr} % build-time item counter (i.e. a temporary variable)
+
+% \advanceitemctr - moves the item counter forward. Confusingly (or not), the command for a new "item" is \newproblem
+\newcommand\advanceitemctr{
+    \stepcounter{itemctr}
+}
+
+% define statuses and fields
+\newcounter{fieldctr} % field counter, tracks both statuses and fields.
+\newcounter{bfieldctr} % build time field counter.
+
+% a status is a "bool". You will call it with no arguments.
+
+% Example:
+%     \newstat{green}
+    
+%     \problem{This problem will have a green background maybe.} \green
+
+
+% \newstat{thisstat} - (1) makes \thisstat available and (2) stores "thisstat" in
+%                          \csuse{field-\fctr}
+\newcommand\newstat[1]{
+    \csdef{#1}{
+        \csdef{#1-\theitemctr}{}
+    }
+    
+    \stepcounter{fieldctr}
+    \csdef{field-\thefieldctr}{#1}
+}
+
+% \newfield{thisfield} - 
+    % (1) makes \thisfield{fieldinfo} available: stores field info.
+    % (2) stores fieldinfo in \csuse{field-\fctr}
+    % (3) makes \build[thisfield]s
+\newcommand\newfield[2][notkey]{
+    % \long here required to record blank lines properly.
+    % see https://tex.stackexchange.com/questions/209678/problem-with-defined-macro-and-blank-lines
+    
+    \long\csdef{#2}##1{
+        % advance the itemctr if this is a "key field" e.g. problem.
+        \ifthenelse{\equal{#1}{key}}{\advanceitemctr}{}
+        
+        \long\csdef{#2-\theitemctr}{##1}
+    }
+    
+    \stepcounter{fieldctr}
+    \csdef{field-\thefieldctr}{#2}
+    
+    % format variables.
+    \long\csdef{#2itemformat}{ %
+        \ifcsdef{get#2}{
+            \item [\getproblemnumber.] \csuse{get#2}
+        }{}
+    }
+    \makeatletter
+    \long\csdef{#2overallformat}##1{%
+        % https://tex.stackexchange.com/questions/86547/how-to-make-itemize-enumerate-description-environment-robust-to-missing-item-el
+        \begin{enumerate} \let\@noitemerr\relax
+            ##1
+        \end{enumerate}
+    }
+    \makeatother
+    \long\csdef{build#2s}{\buildfield{#2}}
+    \long\csdef{buildall#2s}{\buildallfield{#2}}
+}
+
+% \buildfield: takes in a field name.
+\newcommand\buildfield[1]{
+    \setcounter{bitemctr}{0}
+    \csuse{#1overallformat}{%
+        \whileboolexpr
+            { test {\ifnumcomp{\value{bitemctr}}{<}{\theitemctr}} }%
+            {
+                \stepcounter{bitemctr}%
+                % load variables
+                \setcounter{bfieldctr}{0}
+                \whileboolexpr
+                    { test {\ifnumcomp{\value{bfieldctr}}{<}{\thefieldctr}} }%
+                    {   
+                        \stepcounter{bfieldctr}
+                        % edef expands the output
+                        \csedef{bfield}{\csuse{field-\thebfieldctr}} % temporary field variable
+                        % \long\csedef{get\bfield}{\csuse{\bfield-\thebitemctr}}
+                        \csletcs{get\bfield}{\bfield-\thebitemctr}
+                        \csundef{bfield}
+                    }
+                \csdef{getproblemnumber}{\thebitemctr} % just in case I want it
+                
+                \csuse{#1itemformat} % where I actually write the stuff
+                
+                % clear variables
+                \setcounter{bfieldctr}{0}
+                \whileboolexpr
+                    { test {\ifnumcomp{\value{bfieldctr}}{<}{\thefieldctr}} }%
+                    {   
+                        \stepcounter{bfieldctr}
+                        % edef expands the output
+                        \csedef{bfield}{\csuse{field-\thebfieldctr}} % temporary field variable
+                        \csundef{get\bfield}
+                        \csundef{bfield}
+                    }
+                \csundef{getproblemnumber}
+            }
+    }
+}
+
+% \buildcustom - takes in two commands: \customitemformat and \customoverallformat
+\newcommand\buildcustom[2]{
+    \setcounter{bitemctr}{0}
+    #2{%
+        \whileboolexpr
+            { test {\ifnumcomp{\value{bitemctr}}{<}{\theitemctr}} }%
+            {
+                \stepcounter{bitemctr}%
+                % load variables
+                \setcounter{bfieldctr}{0}
+                \whileboolexpr
+                    { test {\ifnumcomp{\value{bfieldctr}}{<}{\thefieldctr}} }%
+                    {   
+                        \stepcounter{bfieldctr}
+                        % edef expands the output
+                        \csedef{bfield}{\csuse{field-\thebfieldctr}} % temporary field variable
+                        \csedef{get\bfield}{\csuse{\bfield-\thebitemctr}}
+                        \csundef{bfield}
+                    }
+                \csdef{getproblemnumber}{\thebitemctr} % just in case I want it
+                
+                #1
+                
+                % clear variables
+                \setcounter{bfieldctr}{0}
+                \whileboolexpr
+                    { test {\ifnumcomp{\value{bfieldctr}}{<}{\thefieldctr}} }%
+                    {   
+                        \stepcounter{bfieldctr}
+                        % edef expands the output
+                        \csedef{bfield}{\csuse{field-\thebfieldctr}} % temporary field variable
+                        \csundef{get\bfield}
+                        \csundef{bfield}
+                    }
+                \csundef{getproblemnumber}
+            }
+    }
+}
+
+\newcommand\showonecustom[2]{
+    \setcounter{bitemctr}{\theitemctr}
+    \addtocounter{bitemctr}{-1}
+    #2{%
+        % \whileboolexpr
+        %     { test {\ifnumcomp{\value{bitemctr}}{<}{\theitemctr}} }%
+        %     {
+        \stepcounter{bitemctr}%
+        % load variables
+        \setcounter{bfieldctr}{0}
+        \whileboolexpr
+            { test {\ifnumcomp{\value{bfieldctr}}{<}{\thefieldctr}} }%
+            {   
+                \stepcounter{bfieldctr}
+                % edef expands the output
+                \csedef{bfield}{\csuse{field-\thebfieldctr}} % temporary field variable
+                % \long\csedef{get\bfield}{\csuse{\bfield-\thebitemctr}}
+                \csletcs{get\bfield}{\bfield-\thebitemctr}
+                \csundef{bfield}
+            }
+        \csdef{getproblemnumber}{\thebitemctr} % just in case I want it
+        
+        #1 % where I actually write the stuff
+        
+        % clear variables
+        \setcounter{bfieldctr}{0}
+        \whileboolexpr
+            { test {\ifnumcomp{\value{bfieldctr}}{<}{\thefieldctr}} }%
+            {   
+                \stepcounter{bfieldctr}
+                % edef expands the output
+                \csedef{bfield}{\csuse{field-\thebfieldctr}} % temporary field variable
+                \csundef{get\bfield}
+                \csundef{bfield}
+            }
+        \csundef{getproblemnumber}
+            % }
+    }
+}
+
+
+% sections!
+
+\newcounter{sectionctr}
+\newcounter{bsectionctr}
+
+\newcommand{\saveandreset}[1]{
+    \ifthenelse{\isempty{#1}}{}{
+        % try looking for an existing section title
+        \setcounter{bsectionctr}{0}
+        \whileboolexpr
+            { test {\ifnumcomp{\value{bsectionctr}}{<}{\thesectionctr}} }%
+            {   
+                \stepcounter{bsectionctr}
+                
+                \ifthenelse{\equal{\csuse{section-\thebsectionctr}}{#1}}{%
+                    \csdef{sectionexists}{}
+                }{}
+            }
+        \ifcsdef{sectionexists}{}{
+            \stepcounter{sectionctr}
+            \csdef{section-\thesectionctr}{#1}%
+        }
+        \csundef{sectionexists}
+    }
+
+    \setcounter{bitemctr}{0}
+    \whileboolexpr
+        { test {\ifnumcomp{\value{bitemctr}}{<}{\theitemctr}} }%
+        {
+            \stepcounter{bitemctr}%
+            % load variables
+            \setcounter{bfieldctr}{0}
+            \whileboolexpr
+                { test {\ifnumcomp{\value{bfieldctr}}{<}{\thefieldctr}} }%
+                {   
+                    \stepcounter{bfieldctr}
+                    % edef expands the output
+                    \csedef{bfield}{\csuse{field-\thebfieldctr}} % temporary field variable
+                    \ifthenelse{\isempty{#1}}{}{
+                        \csletcs{#1-\bfield-\thebitemctr}{\bfield-\thebitemctr}
+                    }
+                    \csundef{\bfield-\thebitemctr}
+                    \csundef{bfield}
+                }
+        }
+    
+    \ifthenelse{\isempty{#1}}{}{
+        \csundef{#1-itemctr}
+        \csedef{#1-itemctr}{\theitemctr}%
+    }
+    \setcounter{itemctr}{0}
+}
+
+\newcommand\load[1]{
+    \setcounter{itemctr}{\csuse{#1-itemctr}}
+    
+    \setcounter{bitemctr}{0}
+    \whileboolexpr
+        { test {\ifnumcomp{\value{bitemctr}}{<}{\theitemctr}} }%
+        {
+            \stepcounter{bitemctr}%
+            % load variables
+            \setcounter{bfieldctr}{0}
+            \whileboolexpr
+                { test {\ifnumcomp{\value{bfieldctr}}{<}{\thefieldctr}} }%
+                {   
+                    \stepcounter{bfieldctr}
+                    % edef expands the output
+                    \csedef{bfield}{\csuse{field-\thebfieldctr}} % temporary field variable
+                    \csletcs{\bfield-\thebitemctr}{#1-\bfield-\thebitemctr}
+                    \csundef{bfield}
+                }
+        }
+}
+
+\newcommand\sectionformat[1]{
+    \textbf{\getsection.} 
+    
+    #1
+}
+
+\newcommand\buildallfield[1]{
+    % don't do this without saving!
+    \setcounter{bsectionctr}{0}
+    \whileboolexpr
+        { test {\ifnumcomp{\value{bsectionctr}}{<}{\thesectionctr}} }%
+        {
+            \stepcounter{bsectionctr}
+            \csdef{getsection}{\csuse{section-\thebsectionctr}}
+            \load{\getsection}
+            
+            \sectionformat{\buildfield{#1}}
+            
+            \csundef{getsection}
+        }
+}
+
+
+% legacy
+\newcommand\resetproblemcounter{
+    \saveandreset{}
+}
+
+
+
+%% standard template
+\newfield[key]{problem}
+\newfield{solution}
+\newfield{hint}
