@@ -146,3 +146,51 @@ Multiple sections
 
 ```
 
+Examples
+```latex
+% in preamble
+
+% format of the examples
+\newcommand\exampleitemformat{
+    \ifcsdef{getproblemsource}{\begin{example}[\getproblemsource]}{\begin{example}}%
+        \getproblem
+    \end{example}
+    
+    \ifcsdef{getsolution}{\textit{Solution.} \getsolution}{}
+}
+
+\newcommand\exampleitemoverall[1]{
+    #1
+}
+
+% some commands to reload the "Examples" section each time
+\saveandreset{Examples} % init
+
+\newcommand\loadexample{%
+    \load{Examples}%
+}
+\newcommand\showexample{
+    \showonecustom{\exampleitemformat}{\exampleitemoverall}
+    \saveandreset{Examples}
+}
+
+...
+
+% an example in text
+\loadexample
+\problem{...}
+\solution{...}
+\showexample
+
+% you might want this, for instance, if you want to let your students try all the examples ahead of the session
+\section*{All examples used} 
+\loadexample
+\buildproblems
+
+```
+
+
+
+### TODOs:
+- basic docs (e.g. what functions are available etc.)
+- examples folder
