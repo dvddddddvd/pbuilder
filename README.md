@@ -3,13 +3,13 @@ Put `pbuilder.sty` in your LaTeX/Overleaf folder, then in the preamble add
 `\usepackage{pbuilder}`.
 
 # Basic Usage
-```
+```latex
 ... % other preamble
 \usepackage{pbuilder}
 
 \begin{document}
 
-<Intro>
+... % intro
 
 % Problem 1
 \problem{...}
@@ -30,7 +30,7 @@ Put `pbuilder.sty` in your LaTeX/Overleaf folder, then in the preamble add
 
 # More examples
 Hints section
-```
+```latex
 ... 
 % Problem 1
 \problem{...}
@@ -53,7 +53,7 @@ Hints section
 
 Custom formats (e.g. if you want to have the solutions repeat the problem and the solutions)
 
-```
+```latex
 ...
 % in preamble
 \renewcommand\solutionitemformat{
@@ -76,7 +76,7 @@ Custom formats (e.g. if you want to have the solutions repeat the problem and th
 ```
 New fields - e.g. if you wanted to add sources for some of the problems.
 
-```
+```latex
 ...
 % in preamble
 \newfield{problemsource}
@@ -98,7 +98,7 @@ New fields - e.g. if you wanted to add sources for some of the problems.
 
 Multiple sections
 
-```
+```latex
 ...         % preamble
 
 \section{Section A}
