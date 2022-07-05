@@ -1,0 +1,97 @@
+\documentclass[a4paper]{article}
+
+%% Sets page size and margins
+\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+%% Math packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm} % for theorems
+\usepackage{tikz-cd} % commutative diagrams (has xcolor)
+\usepackage{physics} % partial derivatives
+
+%% formatting
+\PassOptionsToPackage{a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm}{geometry}
+\usepackage{geometry} % sets page size and margins
+\usepackage{graphicx} % pictures
+\usepackage[colorlinks=true, allcolors=blue]{hyperref} % links
+\usepackage{enumitem} % better list counters
+\usepackage{comment} % comment environments
+\usepackage{parskip} % for non-// linebreaks
+\usepackage{booktabs} % nice tables
+\usepackage{lipsum}
+
+% Evan's boxes
+\usepackage[framemethod=TikZ]{mdframed}
+\usepackage{thmtools}
+
+\showthe\baselineskip
+
+%% Examples
+\mdfdefinestyle{mdredbox}{%
+	linewidth=0.5pt,
+	skipabove=12pt,
+	frametitleaboveskip=5pt,
+	frametitlebelowskip=0pt,
+	skipbelow=2pt,
+	frametitlefont=\bfseries,
+	innertopmargin=4pt,
+	innerbottommargin=8pt,
+	nobreak=true,
+	backgroundcolor=Salmon!5,
+	linecolor=RawSienna,
+}
+\declaretheoremstyle[
+	headfont=\bfseries\color{RawSienna},
+	mdframed={style=mdredbox},
+	headpunct={\\[3pt]},
+	postheadspace={0pt},
+]{thmredbox}
+\declaretheorem[style=thmredbox,name=Example]{example}
+\declaretheorem[style=thmredbox,name=Example,numbered=no]{example*}
+
+%% Problem Solutions
+\mdfdefinestyle{mdblueboxB}{%
+	skipabove=8pt,
+	linewidth=2pt,
+	rightline=false,
+	leftline=true,
+	topline=false,
+	bottomline=false,
+	linecolor=blue,
+	backgroundcolor=blue!5!gray!5,
+}
+\declaretheoremstyle[
+	headfont=\bfseries\color{Blue},
+	bodyfont=\normalfont\small\color{blue},
+	spaceabove=0pt,
+	spacebelow=0pt,
+	mdframed={style=mdblueboxB}
+]{thmblueboxB}
+\declaretheorem[style=thmblueboxB,name=Solution,numbered=no]{psol}
+
+%% Here it is!
+\usepackage{pbuilder}
+
+
+
+\begin{document}
+Here's a demonstration of the basic format without redefining the environments.
+
+\problem{The first problem.}
+\solution{Solution to the first problem.}
+
+\problem{The second problem.}
+\solution{Solution to the second problem.}
+
+\problem{The third problem.}
+\solution{Solution to the third problem.}
+
+\subsection*{Problems}
+\buildproblems
+
+\subsection*{Solutions}
+\buildsolutions
+
+
+\end{document}
